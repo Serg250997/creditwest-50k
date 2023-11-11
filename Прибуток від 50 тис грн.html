@@ -1,0 +1,185 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Розрахунок прибутку від купівлі та продажу валюти</title>
+    <style>
+        body {
+            font-family: Montserrat, Tahoma;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+			background-image: url(R:/share/Treasury/Base.jpg); /* Замініть це на шлях до вашого фонового зображення */
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+		
+        .calculator {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+            padding: 20px;
+            width: 80%;
+			text-align: center; /* Вирівнює текст по центру горизонталі */
+        }
+
+        .calculator label, .calculator select {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+			width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .calculator input {
+            width: 70%; /* або будь-яка інша ширина, яка вам подобається */
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .calculator button {
+            border: none;
+            padding: 15px;
+            font-size: 1.5em;
+            cursor: pointer;
+            background-color: #61bd4f;
+            color: #fff;
+            transition: background-color 0.3s ease;
+			margin: 0 auto; /* Це вирівнює кнопку в центрі горизонтально */
+            display: block; /* Забезпечує вирівнювання тексту по центру і вертикально */
+			width: 50%;
+        }
+
+        .calculator button:hover {
+            background-color: #4b8f29;
+        }
+
+        .calculator h3 {
+            margin-top: 0;
+        }
+
+        .calculator p {
+            margin-top: 10px;
+			margin-bottom: 1px;
+			font-size: 48px;
+            color: #61bd4f; /* Зелений колір, як у кнопці */
+			display: none; /* Початково результат прихований */
+			text-align: center; /* Вирівнюємо текст по центру */
+        }
+		
+		.calculator .available-amount {
+            font-size: 14px; /* розмір шрифту для тексту про доступну суму */
+            color: #333; /* колір тексту */
+            text-align: center; /* вирівнювання по центру */
+            margin-top: 10px; /* відступ зверху */
+        }
+		
+		#currency {
+        width: 70%;
+        font-size: 14px;
+        padding: 10px;
+		}
+		
+		#currency,
+		#input1,
+		#input2,
+		#input3,
+		#input4,
+		#yesNo,
+		button {
+		font-family: Montserrat, Tahoma;
+		
+		.calculator p,
+		.available-amount {
+		font-family: Montserrat, Tahoma;
+		
+		}
+		
+    </style>
+</head>
+<body>
+    <div class="calculator">
+		<img id="logo" src="R:/share/Treasury/logo.png" alt="Логотип" width="150" height="auto" />
+        <h2>Розрахунок прибутку від купівлі/продажу валюти</h2>
+        <label for="currency">Оберіть валюту: 
+            <select id="currency" onchange="fetchExchangeRate()">
+                <option value="USD" selected>Долар США</option>
+                <option value="EUR">Євро</option>
+            </select>
+        </label>
+		<label for="input1">Курс НБУ: <input type="number" id="input1" inputmode="numeric"></label>
+		<label for="input4">Безготівковий курс купівлі: <input type="number" id="input4" inputmode="numeric"></label>
+        <label for="input3">Безготівковий курс продажу: <input type="number" id="input3" inputmode="numeric" oninput="updateAvailableAmount()"></label>
+		<div class="available-amount" id="availableAmountText"></div>
+		<label for="input2">Сума операції у валюті: <input type="number" id="input2" inputmode="numeric"></label>
+		<label for="yesNo">Маєте депозит у розмірі від 100 тисяч гривень з початковим строком погашення від 3 місяців?</label>
+        <select id="yesNo">
+            <option value="yes">Так</option>
+            <option value="no">Ні</option>
+        </select>
+        <button onclick="calculate()">Розрахувати фінансовий результат</button>
+        <p id="result">0</p>
+    </div>
+
+<script>
+    function fetchExchangeRate() {
+        var currency = document.getElementById('currency').value;
+
+        fetch('https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=' + currency + '&json')
+            .then(response => response.json())
+            .then(data => {
+                var exchangeRate = data[0].rate;
+                document.getElementById('input1').value = exchangeRate;
+            })
+            .catch(error => {
+                console.error('Помилка отримання офіційного курсу:', error);
+            });
+    }
+
+	// Викликаємо функцію при завантаженні сторінки
+	window.onload = function () {
+		fetchExchangeRate();
+	};
+
+        function updateAvailableAmount() {
+            var input3 = parseFloat(document.getElementById('input3').value);
+
+            if (!isNaN(input3)) {
+                var availableAmount = Math.floor(50000 / input3 * 100) / 100; // округлення до 2 знаків у меншу сторону
+                document.getElementById('availableAmountText').innerText = 'Доступна сума для продажу Клієнту: ' + availableAmount;
+            } else {
+                document.getElementById('availableAmountText').innerText = '';
+            }
+        }
+
+	
+	function calculate() {
+            var input1 = parseFloat(document.getElementById('input1').value);
+            var input2 = parseFloat(document.getElementById('input2').value);
+            var input3 = parseFloat(document.getElementById('input3').value);
+            var input4 = parseFloat(document.getElementById('input4').value);
+			var hasDocuments = document.getElementById('yesNo').value === 'yes';
+			
+			var result;
+			if (hasDocuments) {
+				result = (input4 - input3) * input2 - input2 * input4 * 0.0025;
+			} else {
+				result = (input4 - input3) * input2 - input1 * input2 * 0.005 - input2 * input4 * 0.0025;
+			}
+			
+			var resultElement = document.getElementById('result')
+            document.getElementById('result').innerHTML = result.toFixed(2) + ' грн';
+			resultElement.style.fontSize = '48px';
+            resultElement.style.color = '#61bd4f'; /* Зелений колір, як у кнопці */
+			resultElement.style.display = 'block'; // Показуємо результат
+        }
+    </script>
+</body>
+</html>
